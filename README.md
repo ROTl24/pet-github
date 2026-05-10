@@ -2,7 +2,19 @@
 
 一个可爱的 Codex 桌面宠物。
 
+![Mika showcase](assets/mika-showcase.png)
+
 Mika 是一个长发 JK 风格的 chibi 数字宠物，穿着灰色校服、白色 T 恤、蓝白领带、格子裙、围巾和耳机。她会生气、认真思考、偷懒打盹，也喜欢小甜点。
+
+## 预览
+
+| Idle | Run | Think | Wave |
+| --- | --- | --- | --- |
+| ![Mika idle](assets/mika-idle.png) | ![Mika run](assets/mika-run.png) | ![Mika think](assets/mika-think.png) | ![Mika wave](assets/mika-wave.png) |
+
+完整图集预览：
+
+![Mika spritesheet preview](assets/mika-spritesheet-preview.png)
 
 ## 文件结构
 

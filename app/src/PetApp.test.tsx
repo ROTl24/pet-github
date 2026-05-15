@@ -1,10 +1,11 @@
-import { render, waitFor } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { act, render, screen, waitFor } from "@testing-library/react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { PetApp } from "./PetApp";
 
 const tauriMocks = vi.hoisted(() => ({
   listen: vi.fn(),
+  listeners: {} as Record<string, Array<() => void>>,
   setPosition: vi.fn(() => Promise.resolve()),
 }));
 
@@ -28,6 +29,16 @@ vi.mock("@tauri-apps/api/window", () => ({
 }));
 
 describe("PetApp", () => {
+  beforeEach(() => {
+    tauriMocks.listen.mockReset();
+    tauriMocks.setPosition.mockClear();
+    tauriMocks.listeners = {};
+    tauriMocks.listen.mockImplementation((event: string, handler: () => void) => {
+      tauriMocks.listeners[event] = [...(tauriMocks.listeners[event] ?? []), handler];
+      return Promise.resolve(vi.fn());
+    });
+  });
+
   it("cleans up activity listener if unmounted before listen resolves", async () => {
     const unlisten = vi.fn();
     const resolver: { current?: (value: () => void) => void } = {};
@@ -44,5 +55,26 @@ describe("PetApp", () => {
     resolver.current?.(unlisten);
 
     await waitFor(() => expect(unlisten).toHaveBeenCalledTimes(1));
+  });
+
+  it("feeds Mika from tray event", async () => {
+    render(<PetApp />);
+
+    await waitFor(() => expect(tauriMocks.listeners["tray-feed"]).toHaveLength(1));
+    act(() => tauriMocks.listeners["tray-feed"][0]());
+
+    expect(screen.getByText("Dessert received.")).toBeInTheDocument();
+  });
+
+  it("opens settings and toggles pause from tray events", async () => {
+    render(<PetApp />);
+
+    await waitFor(() => expect(tauriMocks.listeners["tray-settings"]).toHaveLength(1));
+    act(() => tauriMocks.listeners["tray-settings"][0]());
+    expect(screen.getByLabelText("Mika settings")).toBeInTheDocument();
+    expect(screen.getByLabelText("Pause Mika")).not.toBeChecked();
+
+    act(() => tauriMocks.listeners["tray-pause-toggle"][0]());
+    expect(screen.getByLabelText("Pause Mika")).toBeChecked();
   });
 });

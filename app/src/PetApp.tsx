@@ -1,10 +1,19 @@
 import { listen } from "@tauri-apps/api/event";
 import { getCurrentWindow, LogicalPosition } from "@tauri-apps/api/window";
-import { useEffect, useMemo, useReducer, useRef, useState, type PointerEvent } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useReducer,
+  useRef,
+  useState,
+  type PointerEvent,
+} from "react";
 
 import { Bubble } from "./components/Bubble";
 import { Dessert } from "./components/Dessert";
 import { MikaSprite } from "./components/MikaSprite";
+import { SettingsPanel } from "./components/SettingsPanel";
 import { StatusBars } from "./components/StatusBars";
 import { chooseMode, getAnimationKey } from "./pet/animation";
 import {
@@ -34,6 +43,24 @@ function getPointerPosition(event: PointerEvent, offset: Point): Point {
   };
 }
 
+function listenWithDeferredCleanup(event: string, handler: () => void): () => void {
+  let disposed = false;
+  let cleanup: (() => void) | null = null;
+
+  void listen(event, handler).then((unlisten) => {
+    if (disposed) {
+      unlisten();
+      return;
+    }
+    cleanup = unlisten;
+  });
+
+  return () => {
+    disposed = true;
+    cleanup?.();
+  };
+}
+
 export function PetApp() {
   const startPosition = useMemo(
     () =>
@@ -52,6 +79,7 @@ export function PetApp() {
     lastPulseAt: null,
     lastReminderAt: null,
   });
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const dragOffset = useRef<Point | null>(null);
 
   const mode = chooseMode({
@@ -63,6 +91,12 @@ export function PetApp() {
     walking: false,
   });
   const animationKey = getAnimationKey(mode, state.direction);
+
+  const handleFeed = useCallback(() => {
+    dispatch({ type: "feed" });
+    window.setTimeout(() => dispatch({ type: "eat-complete" }), 1200);
+    window.setTimeout(() => dispatch({ type: "set-bubble", bubble: null }), 4000);
+  }, []);
 
   useEffect(() => {
     void getCurrentWindow().setPosition(new LogicalPosition(state.position.x, state.position.y));
@@ -88,26 +122,26 @@ export function PetApp() {
   }, []);
 
   useEffect(() => {
-    let disposed = false;
-    let cleanup: (() => void) | null = null;
-
-    void listen("activity-pulse", () => {
+    return listenWithDeferredCleanup("activity-pulse", () => {
       const now = Date.now();
       setActivitySession((session) => recordActivityPulse(session, now));
       dispatch({ type: "activity-tick" });
-    }).then((unlisten) => {
-      if (disposed) {
-        unlisten();
-        return;
-      }
-      cleanup = unlisten;
     });
-
-    return () => {
-      disposed = true;
-      cleanup?.();
-    };
   }, []);
+
+  useEffect(() => {
+    const cleanups = [
+      listenWithDeferredCleanup("tray-feed", handleFeed),
+      listenWithDeferredCleanup("tray-pause-toggle", () => {
+        dispatch({ type: "set-paused", paused: !state.paused });
+      }),
+      listenWithDeferredCleanup("tray-settings", () => {
+        setSettingsOpen(true);
+      }),
+    ];
+
+    return () => cleanups.forEach((cleanup) => cleanup());
+  }, [handleFeed, state.paused]);
 
   function handlePointerDown(event: PointerEvent<HTMLDivElement>) {
     const target = event.target;
@@ -142,12 +176,6 @@ export function PetApp() {
     });
   }
 
-  function handleFeed() {
-    dispatch({ type: "feed" });
-    window.setTimeout(() => dispatch({ type: "eat-complete" }), 1200);
-    window.setTimeout(() => dispatch({ type: "set-bubble", bubble: null }), 4000);
-  }
-
   return (
     <main
       className="pet-shell"
@@ -159,6 +187,13 @@ export function PetApp() {
       <Bubble text={state.bubble} />
       <MikaSprite config={mikaConfig} animationKey={animationKey} paused={state.paused} />
       <Dessert onFeed={handleFeed} />
+      {settingsOpen ? (
+        <SettingsPanel
+          paused={state.paused}
+          onPausedChange={(paused) => dispatch({ type: "set-paused", paused })}
+          onClose={() => setSettingsOpen(false)}
+        />
+      ) : null}
     </main>
   );
 }

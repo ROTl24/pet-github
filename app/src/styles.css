@@ -111,3 +111,24 @@ body,
   box-shadow: none;
   cursor: pointer;
 }
+
+.settings-panel {
+  position: absolute;
+  inset: 10px;
+  z-index: 10;
+  display: grid;
+  gap: 10px;
+  align-content: start;
+  padding: 12px;
+  border-radius: 8px;
+  background: rgb(255 255 255 / 92%);
+  color: #111827;
+  font: 12px/1.4 system-ui, sans-serif;
+  box-shadow: 0 12px 30px rgb(15 23 42 / 24%);
+}
+
+.settings-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}

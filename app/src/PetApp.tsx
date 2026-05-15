@@ -145,7 +145,7 @@ export function PetApp() {
 
   function handlePointerDown(event: PointerEvent<HTMLDivElement>) {
     const target = event.target;
-    if (target instanceof HTMLElement && target.closest("button")) return;
+    if (target instanceof HTMLElement && target.closest("button,input,label")) return;
 
     event.currentTarget.setPointerCapture(event.pointerId);
     dragOffset.current = {

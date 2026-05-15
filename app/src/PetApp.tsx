@@ -88,17 +88,25 @@ export function PetApp() {
   }, []);
 
   useEffect(() => {
-    let cleanup = () => {};
+    let disposed = false;
+    let cleanup: (() => void) | null = null;
 
     void listen("activity-pulse", () => {
       const now = Date.now();
       setActivitySession((session) => recordActivityPulse(session, now));
       dispatch({ type: "activity-tick" });
     }).then((unlisten) => {
+      if (disposed) {
+        unlisten();
+        return;
+      }
       cleanup = unlisten;
     });
 
-    return () => cleanup();
+    return () => {
+      disposed = true;
+      cleanup?.();
+    };
   }, []);
 
   function handlePointerDown(event: PointerEvent<HTMLDivElement>) {

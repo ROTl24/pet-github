@@ -23,6 +23,7 @@ export function MikaSprite({ config, animationKey, paused }: MikaSpriteProps) {
           backgroundSize: `${config.frameWidth * config.columns}px ${
             config.frameHeight * config.rows
           }px`,
+          "--sprite-frame-width": `${config.frameWidth}px`,
           "--sprite-row-y": `-${animation.row * config.frameHeight}px`,
           "--sprite-frames": animation.frames,
           "--sprite-duration": `${animation.durationMs}ms`,

@@ -34,7 +34,8 @@ body,
   }
 
   to {
-    background-position: calc(-192px * var(--sprite-frames)) var(--sprite-row-y);
+    background-position: calc(-1 * var(--sprite-frame-width) * var(--sprite-frames))
+      var(--sprite-row-y);
   }
 }
 
@@ -101,10 +102,12 @@ body,
   bottom: 26px;
   width: 46px;
   height: 30px;
+  padding: 0;
   border: 0;
   border-radius: 999px;
   background: #fef3c7;
   color: #78350f;
   font: 11px/1 system-ui, sans-serif;
+  box-shadow: none;
   cursor: pointer;
 }

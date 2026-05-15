@@ -70,4 +70,20 @@ describe("petReducer", () => {
       petReducer(petReducer(initial, { type: "toggle-paused" }), { type: "toggle-paused" }).paused,
     ).toBe(false);
   });
+
+  it("hydrates persisted state", () => {
+    const initial = createInitialPetState({ x: 0, y: 0 });
+    const hydrated = petReducer(initial, {
+      type: "hydrate",
+      state: {
+        position: { x: 12, y: 34 },
+        stats: { mood: 55, energy: 66 },
+        paused: true,
+      },
+    });
+
+    expect(hydrated.position).toEqual({ x: 12, y: 34 });
+    expect(hydrated.stats).toEqual({ mood: 55, energy: 66 });
+    expect(hydrated.paused).toBe(true);
+  });
 });

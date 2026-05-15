@@ -26,6 +26,7 @@ import { mikaConfig } from "./pet/mikaConfig";
 import { snapToBottomLine, type Point, type WorkArea } from "./pet/movement";
 import { createInitialPetState, petReducer } from "./pet/reducer";
 import { isLowEnergy } from "./pet/stats";
+import { loadPersistedPetState, savePersistedPetState } from "./pet/storage";
 
 const petSize = { width: 240, height: 300 };
 const bottomMargin = 12;
@@ -80,6 +81,7 @@ export function PetApp() {
     lastReminderAt: null,
   });
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [persistenceReady, setPersistenceReady] = useState(false);
   const dragOffset = useRef<Point | null>(null);
 
   const mode = chooseMode({
@@ -101,6 +103,39 @@ export function PetApp() {
   useEffect(() => {
     void getCurrentWindow().setPosition(new LogicalPosition(state.position.x, state.position.y));
   }, [state.position.x, state.position.y]);
+
+  useEffect(() => {
+    void loadPersistedPetState().then((persisted) => {
+      if (persisted) {
+        dispatch({
+          type: "hydrate",
+          state: {
+            position: persisted.position,
+            stats: persisted.stats,
+            paused: persisted.paused,
+          },
+        });
+      }
+      setPersistenceReady(true);
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!persistenceReady) return;
+
+    const saveTimer = window.setTimeout(() => {
+      void savePersistedPetState({
+        stats: state.stats,
+        position: state.position,
+        scale: 1,
+        activityResponseEnabled: true,
+        restReminderEnabled: true,
+        paused: state.paused,
+      });
+    }, 500);
+
+    return () => window.clearTimeout(saveTimer);
+  }, [persistenceReady, state.position, state.stats, state.paused]);
 
   useEffect(() => {
     const timer = window.setInterval(() => {

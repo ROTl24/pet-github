@@ -31,7 +31,8 @@ export type PetAction =
   | { type: "set-paused"; paused: boolean }
   | { type: "toggle-paused" }
   | { type: "set-direction"; direction: Direction }
-  | { type: "set-bubble"; bubble: string | null };
+  | { type: "set-bubble"; bubble: string | null }
+  | { type: "hydrate"; state: Partial<Pick<PetState, "position" | "stats" | "paused">> };
 
 export function createInitialPetState(position: Point): PetState {
   return {
@@ -88,5 +89,10 @@ export function petReducer(state: PetState, action: PetAction): PetState {
       return { ...state, direction: action.direction };
     case "set-bubble":
       return { ...state, bubble: action.bubble };
+    case "hydrate":
+      return {
+        ...state,
+        ...action.state,
+      };
   }
 }

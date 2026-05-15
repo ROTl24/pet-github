@@ -7,6 +7,8 @@ const tauriMocks = vi.hoisted(() => ({
   listen: vi.fn(),
   listeners: {} as Record<string, Array<() => void>>,
   setPosition: vi.fn(() => Promise.resolve()),
+  loadPersistedPetState: vi.fn(),
+  savePersistedPetState: vi.fn(() => Promise.resolve()),
 }));
 
 vi.mock("@tauri-apps/api/event", () => ({
@@ -28,15 +30,23 @@ vi.mock("@tauri-apps/api/window", () => ({
   },
 }));
 
+vi.mock("./pet/storage", () => ({
+  loadPersistedPetState: tauriMocks.loadPersistedPetState,
+  savePersistedPetState: tauriMocks.savePersistedPetState,
+}));
+
 describe("PetApp", () => {
   beforeEach(() => {
     tauriMocks.listen.mockReset();
     tauriMocks.setPosition.mockClear();
+    tauriMocks.loadPersistedPetState.mockReset();
+    tauriMocks.savePersistedPetState.mockClear();
     tauriMocks.listeners = {};
     tauriMocks.listen.mockImplementation((event: string, handler: () => void) => {
       tauriMocks.listeners[event] = [...(tauriMocks.listeners[event] ?? []), handler];
       return Promise.resolve(vi.fn());
     });
+    tauriMocks.loadPersistedPetState.mockResolvedValue(null);
   });
 
   it("cleans up activity listener if unmounted before listen resolves", async () => {
@@ -111,5 +121,83 @@ describe("PetApp", () => {
     });
 
     expect(tauriMocks.setPosition).not.toHaveBeenCalled();
+  });
+
+  it("hydrates persisted pet state on startup", async () => {
+    tauriMocks.loadPersistedPetState.mockResolvedValueOnce({
+      position: { x: 123, y: 456 },
+      stats: { mood: 44, energy: 55 },
+      scale: 1,
+      activityResponseEnabled: true,
+      restReminderEnabled: true,
+      paused: true,
+    });
+
+    render(<PetApp />);
+
+    expect(await screen.findByLabelText("Mood 44 of 100")).toBeInTheDocument();
+    expect(screen.getByLabelText("Energy 55 of 100")).toBeInTheDocument();
+    await waitFor(() =>
+      expect(tauriMocks.setPosition).toHaveBeenLastCalledWith(
+        expect.objectContaining({ x: 123, y: 456 }),
+      ),
+    );
+  });
+
+  it("saves pet state after changes", async () => {
+    vi.useFakeTimers();
+    try {
+      render(<PetApp />);
+
+      await act(async () => {
+        await Promise.resolve();
+      });
+      expect(tauriMocks.loadPersistedPetState).toHaveBeenCalledTimes(1);
+
+      act(() => tauriMocks.listeners["tray-feed"][0]());
+      act(() => {
+        vi.advanceTimersByTime(500);
+      });
+
+      expect(tauriMocks.savePersistedPetState).toHaveBeenCalledWith(
+        expect.objectContaining({
+          stats: { mood: 78, energy: 83 },
+          paused: false,
+        }),
+      );
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("does not save before persisted state finishes loading", async () => {
+    vi.useFakeTimers();
+    const resolver: { current?: (value: null) => void } = {};
+    tauriMocks.loadPersistedPetState.mockImplementationOnce(
+      () =>
+        new Promise<null>((resolve) => {
+          resolver.current = resolve;
+        }),
+    );
+
+    try {
+      render(<PetApp />);
+
+      act(() => {
+        vi.advanceTimersByTime(1000);
+      });
+      expect(tauriMocks.savePersistedPetState).not.toHaveBeenCalled();
+
+      await act(async () => {
+        resolver.current?.(null);
+        await Promise.resolve();
+      });
+      act(() => {
+        vi.advanceTimersByTime(500);
+      });
+      expect(tauriMocks.savePersistedPetState).toHaveBeenCalledTimes(1);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

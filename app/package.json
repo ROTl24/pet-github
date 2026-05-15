@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "lint": "tsc --noEmit",
-    "lint:fix": "tsc --noEmit",
+    "lint:fix": "node -e \"console.error('lint:fix is configured in Task 2'); process.exit(1)\"",
     "test": "tsc --noEmit",
     "preview": "vite preview",
     "tauri": "tauri",

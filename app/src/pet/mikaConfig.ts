@@ -1,9 +1,11 @@
 import type { PetRuntimeConfig } from "./types";
 
+const spritesheetPath = new URL("../../../pet/spritesheet.webp", import.meta.url).href;
+
 export const mikaConfig = {
   id: "mika",
   displayName: "Mika",
-  spritesheetPath: "../../pet/spritesheet.webp",
+  spritesheetPath,
   frameWidth: 192,
   frameHeight: 208,
   columns: 8,

@@ -21,4 +21,9 @@ describe("mikaConfig", () => {
       "work",
     ]);
   });
+
+  it("uses a Vite-managed spritesheet asset URL", () => {
+    expect(mikaConfig.spritesheetPath).toContain("spritesheet.webp");
+    expect(mikaConfig.spritesheetPath).not.toBe("../../pet/spritesheet.webp");
+  });
 });

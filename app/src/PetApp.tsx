@@ -26,7 +26,11 @@ import { mikaConfig } from "./pet/mikaConfig";
 import { snapToBottomLine, type Point, type WorkArea } from "./pet/movement";
 import { createInitialPetState, petReducer } from "./pet/reducer";
 import { isLowEnergy } from "./pet/stats";
-import { loadPersistedPetState, savePersistedPetState } from "./pet/storage";
+import {
+  loadPersistedPetState,
+  savePersistedPetState,
+  type PersistedPetState,
+} from "./pet/storage";
 
 const petSize = { width: 240, height: 300 };
 const bottomMargin = 12;
@@ -35,6 +39,12 @@ const initialWorkArea: WorkArea = {
   y: 0,
   width: window.screen.availWidth,
   height: window.screen.availHeight,
+};
+
+const defaultPersistedSettings = {
+  scale: 1,
+  activityResponseEnabled: true,
+  restReminderEnabled: true,
 };
 
 function getPointerPosition(event: PointerEvent, offset: Point): Point {
@@ -84,6 +94,9 @@ export function PetApp() {
   const [persistenceReady, setPersistenceReady] = useState(false);
   const dragOffset = useRef<Point | null>(null);
   const lastSavedSnapshot = useRef<string | null>(null);
+  const persistedBase = useRef<
+    Pick<PersistedPetState, "scale" | "activityResponseEnabled" | "restReminderEnabled">
+  >(defaultPersistedSettings);
 
   const mode = chooseMode({
     paused: state.paused,
@@ -108,6 +121,20 @@ export function PetApp() {
   useEffect(() => {
     void loadPersistedPetState().then((persisted) => {
       if (persisted) {
+        persistedBase.current = {
+          scale:
+            typeof persisted.scale === "number" && Number.isFinite(persisted.scale)
+              ? persisted.scale
+              : defaultPersistedSettings.scale,
+          activityResponseEnabled:
+            typeof persisted.activityResponseEnabled === "boolean"
+              ? persisted.activityResponseEnabled
+              : defaultPersistedSettings.activityResponseEnabled,
+          restReminderEnabled:
+            typeof persisted.restReminderEnabled === "boolean"
+              ? persisted.restReminderEnabled
+              : defaultPersistedSettings.restReminderEnabled,
+        };
         dispatch({
           type: "hydrate",
           state: {
@@ -139,9 +166,9 @@ export function PetApp() {
       void savePersistedPetState({
         stats: state.stats,
         position: state.position,
-        scale: 1,
-        activityResponseEnabled: true,
-        restReminderEnabled: true,
+        scale: persistedBase.current.scale,
+        activityResponseEnabled: persistedBase.current.activityResponseEnabled,
+        restReminderEnabled: persistedBase.current.restReminderEnabled,
         paused: state.paused,
       });
       lastSavedSnapshot.current = snapshot;

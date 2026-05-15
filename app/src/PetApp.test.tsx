@@ -170,6 +170,41 @@ describe("PetApp", () => {
     }
   });
 
+  it("preserves persisted settings fields when saving pet state changes", async () => {
+    vi.useFakeTimers();
+    tauriMocks.loadPersistedPetState.mockResolvedValueOnce({
+      position: { x: 1, y: 2 },
+      stats: { mood: 70, energy: 80 },
+      scale: 1.5,
+      activityResponseEnabled: false,
+      restReminderEnabled: false,
+      paused: false,
+    });
+
+    try {
+      render(<PetApp />);
+
+      await act(async () => {
+        await Promise.resolve();
+      });
+      act(() => tauriMocks.listeners["tray-feed"][0]());
+      act(() => {
+        vi.advanceTimersByTime(500);
+      });
+
+      expect(tauriMocks.savePersistedPetState).toHaveBeenCalledWith(
+        expect.objectContaining({
+          scale: 1.5,
+          activityResponseEnabled: false,
+          restReminderEnabled: false,
+          stats: { mood: 78, energy: 83 },
+        }),
+      );
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it("does not save before persisted state changes", async () => {
     vi.useFakeTimers();
     const resolver: { current?: (value: null) => void } = {};

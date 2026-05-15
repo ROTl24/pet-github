@@ -12,7 +12,20 @@ describe("petReducer", () => {
       eating: false,
       active: false,
       direction: "right",
+      bubble: null,
     });
+  });
+
+  it("does not share mutable initial objects", () => {
+    const position = { x: 10, y: 20 };
+    const first = createInitialPetState(position);
+    const second = createInitialPetState({ x: 30, y: 40 });
+
+    expect(first.position).not.toBe(position);
+    expect(first.stats).not.toBe(second.stats);
+
+    position.x = 99;
+    expect(first.position).toEqual({ x: 10, y: 20 });
   });
 
   it("handles drag lifecycle", () => {

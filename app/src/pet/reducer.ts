@@ -34,8 +34,8 @@ export type PetAction =
 
 export function createInitialPetState(position: Point): PetState {
   return {
-    position,
-    stats: defaultStats,
+    position: { ...position },
+    stats: { ...defaultStats },
     paused: false,
     dragging: false,
     eating: false,

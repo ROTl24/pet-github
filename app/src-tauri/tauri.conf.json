@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "app",
+  "productName": "Mika Desktop Pet",
   "version": "0.1.0",
   "identifier": "com.mika.desktoppet",
   "build": {
@@ -12,9 +12,19 @@
   "app": {
     "windows": [
       {
-        "title": "app",
-        "width": 800,
-        "height": 600
+        "label": "main",
+        "title": "Mika Desktop Pet",
+        "width": 240,
+        "height": 300,
+        "resizable": false,
+        "maximizable": false,
+        "minimizable": false,
+        "decorations": false,
+        "transparent": true,
+        "alwaysOnTop": true,
+        "skipTaskbar": true,
+        "shadow": false,
+        "visible": true
       }
     ],
     "security": {

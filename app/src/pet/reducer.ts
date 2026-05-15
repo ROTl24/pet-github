@@ -29,6 +29,7 @@ export type PetAction =
   | { type: "activity-tick" }
   | { type: "rest-tick" }
   | { type: "set-paused"; paused: boolean }
+  | { type: "toggle-paused" }
   | { type: "set-direction"; direction: Direction }
   | { type: "set-bubble"; bubble: string | null };
 
@@ -81,6 +82,8 @@ export function petReducer(state: PetState, action: PetAction): PetState {
       };
     case "set-paused":
       return { ...state, paused: action.paused };
+    case "toggle-paused":
+      return { ...state, paused: !state.paused };
     case "set-direction":
       return { ...state, direction: action.direction };
     case "set-bubble":

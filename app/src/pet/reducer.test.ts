@@ -65,5 +65,9 @@ describe("petReducer", () => {
     const initial = createInitialPetState({ x: 0, y: 0 });
 
     expect(petReducer(initial, { type: "set-paused", paused: true }).paused).toBe(true);
+    expect(petReducer(initial, { type: "toggle-paused" }).paused).toBe(true);
+    expect(
+      petReducer(petReducer(initial, { type: "toggle-paused" }), { type: "toggle-paused" }).paused,
+    ).toBe(false);
   });
 });

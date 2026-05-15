@@ -133,7 +133,7 @@ export function PetApp() {
     const cleanups = [
       listenWithDeferredCleanup("tray-feed", handleFeed),
       listenWithDeferredCleanup("tray-pause-toggle", () => {
-        dispatch({ type: "set-paused", paused: !state.paused });
+        dispatch({ type: "toggle-paused" });
       }),
       listenWithDeferredCleanup("tray-settings", () => {
         setSettingsOpen(true);
@@ -141,7 +141,7 @@ export function PetApp() {
     ];
 
     return () => cleanups.forEach((cleanup) => cleanup());
-  }, [handleFeed, state.paused]);
+  }, [handleFeed]);
 
   function handlePointerDown(event: PointerEvent<HTMLDivElement>) {
     const target = event.target;

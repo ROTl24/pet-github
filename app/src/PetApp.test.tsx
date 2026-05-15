@@ -77,4 +77,18 @@ describe("PetApp", () => {
     act(() => tauriMocks.listeners["tray-pause-toggle"][0]());
     expect(screen.getByLabelText("Pause Mika")).toBeChecked();
   });
+
+  it("toggles pause for every tray pause event", async () => {
+    render(<PetApp />);
+
+    await waitFor(() => expect(tauriMocks.listeners["tray-settings"]).toHaveLength(1));
+    act(() => tauriMocks.listeners["tray-settings"][0]());
+
+    act(() => {
+      tauriMocks.listeners["tray-pause-toggle"][0]();
+      tauriMocks.listeners["tray-pause-toggle"][0]();
+    });
+
+    expect(screen.getByLabelText("Pause Mika")).not.toBeChecked();
+  });
 });

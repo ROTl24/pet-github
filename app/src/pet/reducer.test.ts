@@ -86,4 +86,20 @@ describe("petReducer", () => {
     expect(hydrated.stats).toEqual({ mood: 55, energy: 66 });
     expect(hydrated.paused).toBe(true);
   });
+
+  it("ignores invalid persisted state fields", () => {
+    const initial = createInitialPetState({ x: 1, y: 2 });
+    const hydrated = petReducer(initial, {
+      type: "hydrate",
+      state: {
+        position: undefined,
+        stats: undefined,
+        paused: undefined,
+      },
+    });
+
+    expect(hydrated.position).toEqual({ x: 1, y: 2 });
+    expect(hydrated.stats).toEqual({ mood: 70, energy: 80 });
+    expect(hydrated.paused).toBe(false);
+  });
 });

@@ -47,6 +47,28 @@ export function createInitialPetState(position: Point): PetState {
   };
 }
 
+function isFiniteNumber(value: unknown): value is number {
+  return typeof value === "number" && Number.isFinite(value);
+}
+
+function isValidPosition(value: unknown): value is Point {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    isFiniteNumber((value as Point).x) &&
+    isFiniteNumber((value as Point).y)
+  );
+}
+
+function isValidStats(value: unknown): value is PetStats {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    isFiniteNumber((value as PetStats).mood) &&
+    isFiniteNumber((value as PetStats).energy)
+  );
+}
+
 export function petReducer(state: PetState, action: PetAction): PetState {
   switch (action.type) {
     case "drag-start":
@@ -89,10 +111,12 @@ export function petReducer(state: PetState, action: PetAction): PetState {
       return { ...state, direction: action.direction };
     case "set-bubble":
       return { ...state, bubble: action.bubble };
-    case "hydrate":
-      return {
-        ...state,
-        ...action.state,
-      };
+    case "hydrate": {
+      const next: PetState = { ...state };
+      if (isValidPosition(action.state.position)) next.position = action.state.position;
+      if (isValidStats(action.state.stats)) next.stats = action.state.stats;
+      if (typeof action.state.paused === "boolean") next.paused = action.state.paused;
+      return next;
+    }
   }
 }

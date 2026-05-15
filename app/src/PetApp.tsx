@@ -83,6 +83,7 @@ export function PetApp() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [persistenceReady, setPersistenceReady] = useState(false);
   const dragOffset = useRef<Point | null>(null);
+  const lastSavedSnapshot = useRef<string | null>(null);
 
   const mode = chooseMode({
     paused: state.paused,
@@ -123,6 +124,17 @@ export function PetApp() {
   useEffect(() => {
     if (!persistenceReady) return;
 
+    const snapshot = JSON.stringify({
+      stats: state.stats,
+      position: state.position,
+      paused: state.paused,
+    });
+    if (lastSavedSnapshot.current === null) {
+      lastSavedSnapshot.current = snapshot;
+      return;
+    }
+    if (lastSavedSnapshot.current === snapshot) return;
+
     const saveTimer = window.setTimeout(() => {
       void savePersistedPetState({
         stats: state.stats,
@@ -132,6 +144,7 @@ export function PetApp() {
         restReminderEnabled: true,
         paused: state.paused,
       });
+      lastSavedSnapshot.current = snapshot;
     }, 500);
 
     return () => window.clearTimeout(saveTimer);

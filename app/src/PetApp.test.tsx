@@ -170,7 +170,7 @@ describe("PetApp", () => {
     }
   });
 
-  it("does not save before persisted state finishes loading", async () => {
+  it("does not save before persisted state changes", async () => {
     vi.useFakeTimers();
     const resolver: { current?: (value: null) => void } = {};
     tauriMocks.loadPersistedPetState.mockImplementationOnce(
@@ -195,9 +195,31 @@ describe("PetApp", () => {
       act(() => {
         vi.advanceTimersByTime(500);
       });
+      expect(tauriMocks.savePersistedPetState).not.toHaveBeenCalled();
+
+      act(() => tauriMocks.listeners["tray-feed"][0]());
+      act(() => {
+        vi.advanceTimersByTime(500);
+      });
       expect(tauriMocks.savePersistedPetState).toHaveBeenCalledTimes(1);
     } finally {
       vi.useRealTimers();
     }
+  });
+
+  it("ignores invalid persisted fields on startup", async () => {
+    tauriMocks.loadPersistedPetState.mockResolvedValueOnce({
+      position: { x: Number.NaN, y: 456 },
+      stats: { mood: "bad", energy: 55 },
+      scale: 1,
+      activityResponseEnabled: true,
+      restReminderEnabled: true,
+      paused: "yes",
+    });
+
+    render(<PetApp />);
+
+    expect(await screen.findByLabelText("Mood 70 of 100")).toBeInTheDocument();
+    expect(screen.getByLabelText("Energy 80 of 100")).toBeInTheDocument();
   });
 });

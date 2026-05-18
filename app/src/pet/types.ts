@@ -21,6 +21,7 @@ export type PetRuntimeConfig = {
   spritesheetPath: string;
   frameWidth: number;
   frameHeight: number;
+  displayScale: number;
   columns: number;
   rows: number;
   animations: Record<PetAnimationKey, PetAnimation>;

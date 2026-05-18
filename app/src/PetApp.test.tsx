@@ -49,6 +49,51 @@ describe("PetApp", () => {
     tauriMocks.loadPersistedPetState.mockResolvedValue(null);
   });
 
+  it("keeps Mika where the user releases her instead of snapping back to the bottom", async () => {
+    Object.defineProperty(window.screen, "availWidth", { configurable: true, value: 1000 });
+    Object.defineProperty(window.screen, "availHeight", { configurable: true, value: 800 });
+    Element.prototype.setPointerCapture = vi.fn();
+    Element.prototype.releasePointerCapture = vi.fn();
+    tauriMocks.loadPersistedPetState.mockResolvedValueOnce({
+      position: { x: 100, y: 100 },
+      stats: { mood: 70, energy: 80 },
+      scale: 1,
+      activityResponseEnabled: true,
+      restReminderEnabled: true,
+      paused: false,
+    });
+
+    const { container } = render(<PetApp />);
+    const shell = container.querySelector(".pet-shell");
+    if (!shell) throw new Error("pet shell missing");
+
+    await waitFor(() =>
+      expect(tauriMocks.setPosition).toHaveBeenLastCalledWith(
+        expect.objectContaining({ x: 100, y: 100 }),
+      ),
+    );
+    tauriMocks.setPosition.mockClear();
+
+    fireEvent.pointerDown(shell, { pointerId: 1, screenX: 110, screenY: 120 });
+    fireEvent.pointerMove(shell, { pointerId: 1, screenX: 360, screenY: 310 });
+    fireEvent.pointerUp(shell, { pointerId: 1, screenX: 360, screenY: 310 });
+
+    await waitFor(() =>
+      expect(tauriMocks.setPosition).toHaveBeenLastCalledWith(
+        expect.objectContaining({ x: 350, y: 290 }),
+      ),
+    );
+  });
+
+  it("does not switch from idle to work animation on a single activity pulse", async () => {
+    render(<PetApp />);
+
+    await waitFor(() => expect(tauriMocks.listeners["activity-pulse"]).toHaveLength(1));
+    act(() => tauriMocks.listeners["activity-pulse"][0]());
+
+    expect(screen.getByLabelText("Mika idle")).toBeInTheDocument();
+  });
+
   it("cleans up activity listener if unmounted before listen resolves", async () => {
     const unlisten = vi.fn();
     const resolver: { current?: (value: () => void) => void } = {};

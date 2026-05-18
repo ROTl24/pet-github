@@ -14,8 +14,8 @@
       {
         "label": "main",
         "title": "Mika Desktop Pet",
-        "width": 240,
-        "height": 300,
+        "width": 200,
+        "height": 250,
         "resizable": false,
         "maximizable": false,
         "minimizable": false,

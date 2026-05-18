@@ -8,8 +8,14 @@ type MikaSpriteProps = {
   paused: boolean;
 };
 
+function toCssPixels(value: number): string {
+  return `${Number(value.toFixed(3))}px`;
+}
+
 export function MikaSprite({ config, animationKey, paused }: MikaSpriteProps) {
   const animation = config.animations[animationKey];
+  const frameWidth = config.frameWidth * config.displayScale;
+  const frameHeight = config.frameHeight * config.displayScale;
 
   return (
     <div
@@ -17,14 +23,14 @@ export function MikaSprite({ config, animationKey, paused }: MikaSpriteProps) {
       data-animation={animationKey}
       style={
         {
-          width: config.frameWidth,
-          height: config.frameHeight,
+          width: toCssPixels(frameWidth),
+          height: toCssPixels(frameHeight),
           backgroundImage: `url(${config.spritesheetPath})`,
-          backgroundSize: `${config.frameWidth * config.columns}px ${
-            config.frameHeight * config.rows
-          }px`,
-          "--sprite-frame-width": `${config.frameWidth}px`,
-          "--sprite-row-y": `-${animation.row * config.frameHeight}px`,
+          backgroundSize: `${toCssPixels(frameWidth * config.columns)} ${toCssPixels(
+            frameHeight * config.rows,
+          )}`,
+          "--sprite-frame-width": toCssPixels(frameWidth),
+          "--sprite-row-y": `-${toCssPixels(animation.row * frameHeight)}`,
           "--sprite-frames": animation.frames,
           "--sprite-duration": `${animation.durationMs}ms`,
           "--sprite-iterations": animation.loop ? "infinite" : "1",

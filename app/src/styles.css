@@ -11,15 +11,15 @@ body,
 
 .pet-shell {
   position: relative;
-  width: 240px;
-  height: 300px;
+  width: 200px;
+  height: 250px;
   background: transparent;
 }
 
 .mika-sprite {
   position: absolute;
-  left: 24px;
-  bottom: 20px;
+  left: 16px;
+  bottom: 14px;
   background-repeat: no-repeat;
   background-position: 0 var(--sprite-row-y);
   animation: mika-frames var(--sprite-duration) steps(var(--sprite-frames))
@@ -41,11 +41,11 @@ body,
 
 .status-bars {
   position: absolute;
-  left: 20px;
+  left: 14px;
   top: 8px;
   display: grid;
   gap: 4px;
-  width: 170px;
+  width: 150px;
   padding: 6px 8px;
   border: 1px solid rgb(255 255 255 / 70%);
   border-radius: 8px;
@@ -85,9 +85,9 @@ body,
 
 .bubble {
   position: absolute;
-  left: 18px;
-  top: 56px;
-  max-width: 190px;
+  left: 14px;
+  top: 52px;
+  max-width: 170px;
   padding: 8px 10px;
   border-radius: 8px;
   background: white;
@@ -98,10 +98,10 @@ body,
 
 .dessert-button {
   position: absolute;
-  right: 10px;
-  bottom: 26px;
-  width: 46px;
-  height: 30px;
+  right: 8px;
+  bottom: 20px;
+  width: 42px;
+  height: 28px;
   padding: 0;
   border: 0;
   border-radius: 999px;

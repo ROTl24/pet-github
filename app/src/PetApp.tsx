@@ -19,11 +19,12 @@ import { chooseMode, getAnimationKey } from "./pet/animation";
 import {
   expireActivity,
   recordActivityPulse,
+  shouldEnterWorkMode,
   shouldShowRestReminder,
   type ActivitySession,
 } from "./pet/activity";
 import { mikaConfig } from "./pet/mikaConfig";
-import { snapToBottomLine, type Point, type WorkArea } from "./pet/movement";
+import { clampToWorkArea, snapToBottomLine, type Point, type WorkArea } from "./pet/movement";
 import { createInitialPetState, petReducer } from "./pet/reducer";
 import { isLowEnergy } from "./pet/stats";
 import {
@@ -32,14 +33,8 @@ import {
   type PersistedPetState,
 } from "./pet/storage";
 
-const petSize = { width: 240, height: 300 };
-const bottomMargin = 12;
-const initialWorkArea: WorkArea = {
-  x: 0,
-  y: 0,
-  width: window.screen.availWidth,
-  height: window.screen.availHeight,
-};
+const petSize = { width: 200, height: 250 };
+const bottomMargin = 10;
 
 const defaultPersistedSettings = {
   scale: 1,
@@ -51,6 +46,15 @@ function getPointerPosition(event: PointerEvent, offset: Point): Point {
   return {
     x: event.screenX - offset.x,
     y: event.screenY - offset.y,
+  };
+}
+
+function getWorkArea(): WorkArea {
+  return {
+    x: 0,
+    y: 0,
+    width: window.screen.availWidth,
+    height: window.screen.availHeight,
   };
 }
 
@@ -76,8 +80,8 @@ export function PetApp() {
   const startPosition = useMemo(
     () =>
       snapToBottomLine(
-        { x: initialWorkArea.width - petSize.width - 80, y: 0 },
-        initialWorkArea,
+        { x: getWorkArea().width - petSize.width - 80, y: 0 },
+        getWorkArea(),
         petSize,
         bottomMargin,
       ),
@@ -199,8 +203,13 @@ export function PetApp() {
   useEffect(() => {
     return listenWithDeferredCleanup("activity-pulse", () => {
       const now = Date.now();
-      setActivitySession((session) => recordActivityPulse(session, now));
-      dispatch({ type: "activity-tick" });
+      setActivitySession((session) => {
+        const next = recordActivityPulse(session, now);
+        if (shouldEnterWorkMode(next, now)) {
+          dispatch({ type: "activity-tick" });
+        }
+        return next;
+      });
     });
   }, []);
 
@@ -235,7 +244,7 @@ export function PetApp() {
 
     dispatch({
       type: "drag-move",
-      position: getPointerPosition(event, dragOffset.current),
+      position: clampToWorkArea(getPointerPosition(event, dragOffset.current), getWorkArea(), petSize),
     });
   }
 
@@ -247,7 +256,7 @@ export function PetApp() {
     dragOffset.current = null;
     dispatch({
       type: "drag-end",
-      position: snapToBottomLine(release, initialWorkArea, petSize, bottomMargin),
+      position: clampToWorkArea(release, getWorkArea(), petSize),
     });
   }
 

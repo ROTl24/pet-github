@@ -5,11 +5,13 @@ import { mikaConfig } from "../pet/mikaConfig";
 import { MikaSprite } from "./MikaSprite";
 
 describe("MikaSprite", () => {
-  it("passes configured frame width to animation styles", () => {
+  it("renders Mika at the configured display scale", () => {
     render(<MikaSprite config={mikaConfig} animationKey="idle" paused={false} />);
 
     expect(screen.getByLabelText("Mika idle")).toHaveStyle({
-      "--sprite-frame-width": `${mikaConfig.frameWidth}px`,
+      width: "153.6px",
+      height: "166.4px",
+      "--sprite-frame-width": "153.6px",
     });
   });
 });

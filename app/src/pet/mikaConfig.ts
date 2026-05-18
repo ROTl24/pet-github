@@ -8,6 +8,7 @@ export const mikaConfig = {
   spritesheetPath,
   frameWidth: 192,
   frameHeight: 208,
+  displayScale: 0.8,
   columns: 8,
   rows: 9,
   animations: {

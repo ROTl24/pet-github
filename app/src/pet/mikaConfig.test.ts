@@ -7,6 +7,7 @@ describe("mikaConfig", () => {
     expect(mikaConfig.frameHeight).toBe(208);
     expect(mikaConfig.columns).toBe(8);
     expect(mikaConfig.rows).toBe(9);
+    expect(mikaConfig.displayScale).toBe(0.8);
   });
 
   it("contains the MVP animation keys", () => {
@@ -25,5 +26,9 @@ describe("mikaConfig", () => {
   it("uses a Vite-managed spritesheet asset URL", () => {
     expect(mikaConfig.spritesheetPath).toContain("spritesheet.webp");
     expect(mikaConfig.spritesheetPath).not.toBe("../../pet/spritesheet.webp");
+  });
+
+  it("uses the original standing animation as the default idle row", () => {
+    expect(mikaConfig.animations.idle.row).toBe(0);
   });
 });

@@ -33,6 +33,11 @@ export function expireActivity(session: ActivitySession, now: number): ActivityS
   };
 }
 
+export function shouldEnterWorkMode(session: ActivitySession, now: number): boolean {
+  if (!session.activeStartedAt) return false;
+  return now - session.activeStartedAt >= activityConfig.workStartMs;
+}
+
 export function shouldShowRestReminder(session: ActivitySession, now: number): boolean {
   if (!session.activeStartedAt) return false;
   if (now - session.activeStartedAt < activityConfig.restReminderMs) return false;

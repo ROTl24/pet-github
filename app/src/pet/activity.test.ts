@@ -4,6 +4,7 @@ import {
   activityConfig,
   expireActivity,
   recordActivityPulse,
+  shouldEnterWorkMode,
   shouldShowRestReminder,
   type ActivitySession,
 } from "./activity";
@@ -36,6 +37,13 @@ describe("activity", () => {
       active: false,
       activeStartedAt: null,
     });
+  });
+
+  it("keeps normal idle before sustained activity reaches the work threshold", () => {
+    const active = recordActivityPulse(inactiveSession, 1000);
+
+    expect(shouldEnterWorkMode(active, 1000 + activityConfig.workStartMs - 1)).toBe(false);
+    expect(shouldEnterWorkMode(active, 1000 + activityConfig.workStartMs)).toBe(true);
   });
 
   it("shows rest reminders after sustained activity and cooldown", () => {

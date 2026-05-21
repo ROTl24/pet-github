@@ -11,6 +11,7 @@ describe("petReducer", () => {
       dragging: false,
       eating: false,
       active: false,
+      walking: false,
       direction: "right",
       bubble: null,
     });
@@ -48,6 +49,24 @@ describe("petReducer", () => {
 
     expect(fed.eating).toBe(true);
     expect(fed.stats).toEqual({ mood: 78, energy: 83 });
+  });
+
+  it("handles walking lifecycle", () => {
+    const initial = createInitialPetState({ x: 0, y: 0 });
+    const started = petReducer(initial, { type: "walk-start", direction: "left" });
+    expect(started.walking).toBe(true);
+    expect(started.direction).toBe("left");
+
+    const stepped = petReducer(started, {
+      type: "walk-step",
+      position: { x: 12, y: 3 },
+      direction: "right",
+    });
+    expect(stepped.walking).toBe(true);
+    expect(stepped.position).toEqual({ x: 12, y: 3 });
+    expect(stepped.direction).toBe("right");
+
+    expect(petReducer(stepped, { type: "walk-stop" }).walking).toBe(false);
   });
 
   it("handles activity and rest ticks", () => {

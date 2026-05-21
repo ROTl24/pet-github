@@ -16,6 +16,7 @@ export type PetState = {
   dragging: boolean;
   eating: boolean;
   active: boolean;
+  walking: boolean;
   direction: Direction;
   bubble: string | null;
 };
@@ -28,6 +29,9 @@ export type PetAction =
   | { type: "eat-complete" }
   | { type: "activity-tick" }
   | { type: "rest-tick" }
+  | { type: "walk-start"; direction: Direction }
+  | { type: "walk-step"; position: Point; direction: Direction }
+  | { type: "walk-stop" }
   | { type: "set-paused"; paused: boolean }
   | { type: "toggle-paused" }
   | { type: "set-direction"; direction: Direction }
@@ -42,6 +46,7 @@ export function createInitialPetState(position: Point): PetState {
     dragging: false,
     eating: false,
     active: false,
+    walking: false,
     direction: "right",
     bubble: null,
   };
@@ -72,7 +77,7 @@ function isValidStats(value: unknown): value is PetStats {
 export function petReducer(state: PetState, action: PetAction): PetState {
   switch (action.type) {
     case "drag-start":
-      return { ...state, dragging: true, eating: false };
+      return { ...state, dragging: true, eating: false, walking: false };
     case "drag-move":
       return { ...state, position: action.position };
     case "drag-end":
@@ -86,8 +91,9 @@ export function petReducer(state: PetState, action: PetAction): PetState {
       return {
         ...state,
         eating: true,
+        walking: false,
         stats: applyFeed(state.stats),
-        bubble: "Dessert received.",
+        bubble: "收到小蛋糕啦。",
       };
     case "eat-complete":
       return { ...state, eating: false };
@@ -95,6 +101,7 @@ export function petReducer(state: PetState, action: PetAction): PetState {
       return {
         ...state,
         active: true,
+        walking: false,
         stats: applyActivityTick(state.stats),
       };
     case "rest-tick":
@@ -103,6 +110,17 @@ export function petReducer(state: PetState, action: PetAction): PetState {
         active: false,
         stats: applyRestTick(state.stats),
       };
+    case "walk-start":
+      return { ...state, walking: true, direction: action.direction };
+    case "walk-step":
+      return {
+        ...state,
+        walking: true,
+        position: action.position,
+        direction: action.direction,
+      };
+    case "walk-stop":
+      return { ...state, walking: false };
     case "set-paused":
       return { ...state, paused: action.paused };
     case "toggle-paused":

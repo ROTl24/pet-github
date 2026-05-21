@@ -24,7 +24,13 @@ import {
   type ActivitySession,
 } from "./pet/activity";
 import { mikaConfig } from "./pet/mikaConfig";
-import { clampToWorkArea, snapToBottomLine, type Point, type WorkArea } from "./pet/movement";
+import {
+  clampToWorkArea,
+  moveToward,
+  snapToBottomLine,
+  type Point,
+  type WorkArea,
+} from "./pet/movement";
 import { createInitialPetState, petReducer } from "./pet/reducer";
 import { isLowEnergy } from "./pet/stats";
 import {
@@ -35,6 +41,11 @@ import {
 
 const petSize = { width: 200, height: 250 };
 const bottomMargin = 10;
+const walkSpeedPxPerSecond = 70;
+const minWalkDistance = 90;
+const minWalkPauseMs = 2800;
+const maxWalkPauseMs = 6500;
+const manualPlacementPauseMs = 5000;
 
 const defaultPersistedSettings = {
   scale: 1,
@@ -76,6 +87,29 @@ function listenWithDeferredCleanup(event: string, handler: () => void): () => vo
   };
 }
 
+function chooseWalkTarget(current: Point, workArea: WorkArea): Point {
+  const maxX = workArea.x + workArea.width - petSize.width;
+  const minX = workArea.x;
+  const leftRoom = Math.max(0, current.x - minX);
+  const rightRoom = Math.max(0, maxX - current.x);
+  const direction = rightRoom >= leftRoom ? 1 : -1;
+  const room = direction > 0 ? rightRoom : leftRoom;
+  const distance = Math.max(minWalkDistance, room * (0.35 + Math.random() * 0.35));
+
+  return clampToWorkArea(
+    {
+      x: current.x + direction * Math.min(room, distance),
+      y: current.y,
+    },
+    workArea,
+    petSize,
+  );
+}
+
+function getWalkPauseMs(): number {
+  return minWalkPauseMs + Math.random() * (maxWalkPauseMs - minWalkPauseMs);
+}
+
 export function PetApp() {
   const startPosition = useMemo(
     () =>
@@ -97,6 +131,9 @@ export function PetApp() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [persistenceReady, setPersistenceReady] = useState(false);
   const dragOffset = useRef<Point | null>(null);
+  const stateRef = useRef(state);
+  const walkTarget = useRef<Point | null>(null);
+  const walkPauseUntil = useRef(0);
   const lastSavedSnapshot = useRef<string | null>(null);
   const persistedBase = useRef<
     Pick<PersistedPetState, "scale" | "activityResponseEnabled" | "restReminderEnabled">
@@ -108,19 +145,90 @@ export function PetApp() {
     eating: state.eating,
     lowEnergy: isLowEnergy(state.stats),
     active: state.active,
-    walking: false,
+    walking: state.walking,
   });
   const animationKey = getAnimationKey(mode, state.direction);
 
   const handleFeed = useCallback(() => {
     dispatch({ type: "feed" });
     window.setTimeout(() => dispatch({ type: "eat-complete" }), 1200);
-    window.setTimeout(() => dispatch({ type: "set-bubble", bubble: null }), 4000);
+    window.setTimeout(() => dispatch({ type: "set-bubble", bubble: null }), 2800);
   }, []);
+
+  useEffect(() => {
+    stateRef.current = state;
+  }, [state]);
 
   useEffect(() => {
     void getCurrentWindow().setPosition(new LogicalPosition(state.position.x, state.position.y));
   }, [state.position.x, state.position.y]);
+
+  useEffect(() => {
+    let animationFrame = 0;
+    let lastFrameAt = performance.now();
+    walkPauseUntil.current = lastFrameAt + getWalkPauseMs();
+
+    const tick = (now: number) => {
+      const currentState = stateRef.current;
+      const shouldWalk =
+        !currentState.paused &&
+        !currentState.dragging &&
+        !currentState.eating &&
+        !currentState.active &&
+        !isLowEnergy(currentState.stats);
+
+      if (!shouldWalk) {
+        walkTarget.current = null;
+        if (currentState.walking) dispatch({ type: "walk-stop" });
+        lastFrameAt = now;
+        animationFrame = window.requestAnimationFrame(tick);
+        return;
+      }
+
+      if (now < walkPauseUntil.current) {
+        if (currentState.walking) dispatch({ type: "walk-stop" });
+        lastFrameAt = now;
+        animationFrame = window.requestAnimationFrame(tick);
+        return;
+      }
+
+      if (!walkTarget.current) {
+        walkTarget.current = chooseWalkTarget(currentState.position, getWorkArea());
+        const direction = walkTarget.current.x < currentState.position.x ? "left" : "right";
+        dispatch({ type: "walk-start", direction });
+      }
+
+      const elapsedSeconds = Math.min((now - lastFrameAt) / 1000, 0.08);
+      lastFrameAt = now;
+      const target = walkTarget.current;
+      const direction = target.x < currentState.position.x ? "left" : "right";
+      const nextPosition = clampToWorkArea(
+        {
+          x: moveToward(
+            currentState.position.x,
+            target.x,
+            walkSpeedPxPerSecond * elapsedSeconds,
+          ),
+          y: currentState.position.y,
+        },
+        getWorkArea(),
+        petSize,
+      );
+
+      dispatch({ type: "walk-step", position: nextPosition, direction });
+
+      if (nextPosition.x === target.x) {
+        walkTarget.current = null;
+        walkPauseUntil.current = now + getWalkPauseMs();
+        dispatch({ type: "walk-stop" });
+      }
+
+      animationFrame = window.requestAnimationFrame(tick);
+    };
+
+    animationFrame = window.requestAnimationFrame(tick);
+    return () => window.cancelAnimationFrame(animationFrame);
+  }, []);
 
   useEffect(() => {
     void loadPersistedPetState().then((persisted) => {
@@ -190,7 +298,7 @@ export function PetApp() {
           dispatch({ type: next.active ? "activity-tick" : "rest-tick" });
         }
         if (shouldShowRestReminder(next, now)) {
-          dispatch({ type: "set-bubble", bubble: "Time for a short break?" });
+          dispatch({ type: "set-bubble", bubble: "要不要休息一下？" });
           return { ...next, lastReminderAt: now };
         }
         return next;
@@ -232,6 +340,8 @@ export function PetApp() {
     if (target instanceof HTMLElement && target.closest("button,input,label")) return;
 
     event.currentTarget.setPointerCapture(event.pointerId);
+    walkPauseUntil.current = performance.now() + manualPlacementPauseMs;
+    walkTarget.current = null;
     dragOffset.current = {
       x: event.screenX - state.position.x,
       y: event.screenY - state.position.y,
@@ -254,6 +364,8 @@ export function PetApp() {
     event.currentTarget.releasePointerCapture(event.pointerId);
     const release = getPointerPosition(event, dragOffset.current);
     dragOffset.current = null;
+    walkPauseUntil.current = performance.now() + manualPlacementPauseMs;
+    walkTarget.current = null;
     dispatch({
       type: "drag-end",
       position: clampToWorkArea(release, getWorkArea(), petSize),

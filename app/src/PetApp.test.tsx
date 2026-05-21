@@ -94,6 +94,29 @@ describe("PetApp", () => {
     expect(screen.getByLabelText("Mika idle")).toBeInTheDocument();
   });
 
+  it("uses walk animation during autonomous movement", async () => {
+    vi.useFakeTimers();
+    const random = vi.spyOn(Math, "random").mockReturnValue(0);
+    Object.defineProperty(window.screen, "availWidth", { configurable: true, value: 1000 });
+    Object.defineProperty(window.screen, "availHeight", { configurable: true, value: 800 });
+
+    try {
+      render(<PetApp />);
+
+      await act(async () => {
+        await Promise.resolve();
+      });
+      act(() => {
+        vi.advanceTimersByTime(3000);
+      });
+
+      expect(screen.getByLabelText("Mika walkLeft")).toBeInTheDocument();
+    } finally {
+      random.mockRestore();
+      vi.useRealTimers();
+    }
+  });
+
   it("cleans up activity listener if unmounted before listen resolves", async () => {
     const unlisten = vi.fn();
     const resolver: { current?: (value: () => void) => void } = {};
@@ -118,7 +141,7 @@ describe("PetApp", () => {
     await waitFor(() => expect(tauriMocks.listeners["tray-feed"]).toHaveLength(1));
     act(() => tauriMocks.listeners["tray-feed"][0]());
 
-    expect(screen.getByText("Dessert received.")).toBeInTheDocument();
+    expect(screen.getByText("收到小蛋糕啦。")).toBeInTheDocument();
   });
 
   it("opens settings and toggles pause from tray events", async () => {

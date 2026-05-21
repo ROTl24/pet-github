@@ -41,25 +41,44 @@ body,
 
 .status-bars {
   position: absolute;
-  left: 14px;
-  top: 8px;
+  left: 12px;
+  top: 10px;
   display: grid;
-  gap: 4px;
-  width: 150px;
-  padding: 6px 8px;
-  border: 1px solid rgb(255 255 255 / 70%);
-  border-radius: 8px;
-  background: rgb(20 24 31 / 58%);
+  gap: 3px;
+  width: 86px;
+  padding: 5px 6px;
+  border: 1px solid rgb(255 255 255 / 42%);
+  border-radius: 7px;
+  background: rgb(18 22 28 / 38%);
   color: white;
-  font: 11px/1.2 system-ui, sans-serif;
+  font: 10px/1.1 system-ui, sans-serif;
+  opacity: 0.34;
+  pointer-events: none;
   backdrop-filter: blur(8px);
+  transition:
+    opacity 160ms ease,
+    background-color 160ms ease,
+    transform 160ms ease;
+}
+
+.pet-shell:hover .status-bars,
+.pet-shell:focus-within .status-bars {
+  background: rgb(18 22 28 / 64%);
+  opacity: 0.9;
+  transform: translateY(-1px);
 }
 
 .status-row {
   display: grid;
-  grid-template-columns: 42px 1fr;
+  grid-template-columns: 12px 1fr;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
+}
+
+.status-icon {
+  color: rgb(255 255 255 / 82%);
+  font-weight: 700;
+  text-align: center;
 }
 
 .status-track {
@@ -85,31 +104,90 @@ body,
 
 .bubble {
   position: absolute;
-  left: 14px;
-  top: 52px;
-  max-width: 170px;
-  padding: 8px 10px;
+  left: 18px;
+  top: 42px;
+  max-width: 136px;
+  padding: 7px 9px;
   border-radius: 8px;
-  background: white;
+  background: rgb(255 255 255 / 94%);
   color: #1f2937;
   font: 12px/1.35 system-ui, sans-serif;
   box-shadow: 0 8px 22px rgb(15 23 42 / 18%);
+  pointer-events: none;
+  animation: bubble-in 180ms ease-out;
+}
+
+.bubble::after {
+  position: absolute;
+  left: 22px;
+  bottom: -5px;
+  width: 10px;
+  height: 10px;
+  background: inherit;
+  content: "";
+  transform: rotate(45deg);
+}
+
+@keyframes bubble-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 .dessert-button {
   position: absolute;
-  right: 8px;
-  bottom: 20px;
-  width: 42px;
-  height: 28px;
+  right: 12px;
+  bottom: 24px;
+  width: 32px;
+  height: 32px;
   padding: 0;
-  border: 0;
-  border-radius: 999px;
-  background: #fef3c7;
-  color: #78350f;
-  font: 11px/1 system-ui, sans-serif;
-  box-shadow: none;
+  border: 1px solid rgb(255 255 255 / 68%);
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 48% 36%, #fff7ed 0 18%, transparent 19%),
+    linear-gradient(180deg, #fecdd3 0 42%, #fb7185 43% 66%, #7c2d12 67% 100%);
+  box-shadow: 0 5px 12px rgb(15 23 42 / 18%);
   cursor: pointer;
+  opacity: 0.55;
+  transition:
+    opacity 160ms ease,
+    transform 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.dessert-button::before {
+  position: absolute;
+  left: 9px;
+  top: 6px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #fff7ed;
+  content: "";
+}
+
+.dessert-button::after {
+  position: absolute;
+  left: 13px;
+  top: 3px;
+  width: 6px;
+  height: 9px;
+  border-radius: 999px 999px 0 0;
+  background: #ef4444;
+  content: "";
+}
+
+.dessert-button:hover,
+.dessert-button:focus-visible {
+  opacity: 1;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgb(15 23 42 / 24%);
 }
 
 .settings-panel {

@@ -15,9 +15,3 @@ build/
 
 generated/
 tmp/
-
-app/node_modules/
-app/dist/
-app/src-tauri/target/
-app/src-tauri/gen/
-*.tsbuildinfo
